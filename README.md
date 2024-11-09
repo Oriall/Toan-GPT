@@ -1,11 +1,11 @@
-# ChatGPT Discord Bot
+# Toan GPT Discord Bot
 
-> ### Build your own Discord bot using ChatGPT
+> ### Build your own Studyy Discord bot using ChatGPT
 
 ---
 > [!IMPORTANT]
 >
-> **Major Update (2024/03):**
+> **Major Update (2024/11):**
 > - Due to instability issues with GPT-4 model, we have defaulted back to GPT-3.5-turbo
 > - Gemini-Pro and GPT-4 now supported for free
 > - See README for details and dependency updates.
@@ -146,26 +146,39 @@ To use the OpenAI API features, follow these steps:
 * Set the value of `LOGGING` in the `.env` to False
 
 ------
->  [**中文設置教學**](https://zero6992.me/2023/03/08/chatGPT-discord-bot-chinese/)
+>  [**SEVER DISCORD**](https://discord.gg/78TnsrJd)
 ------
-## Commands
+## Commands AI Contact
 
-* `/chat [message]` Chat with ChatGPT/Gemeni
-* `/draw [prompt]` Generate an image with Gemini/OpenAI/Bing
-* `/switchpersona [persona]` Switch between optional chatGPT jailbreaks
+* `/chat [message]` Chat với AI/Gemini
+* `/draw [prompt][model]` Tạo ảnh vẽ theo lệnh với cấu trúc (Prompt:Lệnh) (Model:Bot)
+* - `/switchpersona [persona]` Chuyển đổi chế độ 
    * `random`: Picks a random persona
    * `standard`: Standard chatGPT mode
    * `dan`: DAN 13.5 (Latest Working ChatGPT Jailbreak prompt)
    * `Smart mode`: AIM (Always Intelligent and Machiavellian)
    * `Developer Mode`: software developer who specializes in the AI's area
 
-* `/private` ChatGPT switch to private mode
-* `/public` ChatGPT switch to public mode
-* `/replyall` ChatGPT switch between replyAll mode and default mode
-* `/reset` Clear ChatGPT conversation history
-* `/chat-model` Switch different chat model
+* `/private` Chat AI với chế độ Riêng tư
+* `/public` Chat AI với chế độ Công Khai
+* `/replyall` Chat AI chuyển qua chế độ trả lời tất cả
+* `/reset` Xóa lịch sự trò chuyện
+* `/chat-model` Chuyển đổi qua các Model Bot
    * `gpt-4`: GPT-4 model
    * `Gemini`: Google Gemini Model
+
+## Commands Study Contact
+
+* `/start_top` Bắt đầu tính giờ học
+* `/end_top` Thời gian kết thúc giờ học
+* `/tao_phong` Để phòng học thoại mới
+* `/join` Bot vào phòng thoại
+* `/start_time` Đếm ngược thời gian làm bài
+* `/start_study` Bắt đầu đếm thời gian làm bài 
+   ( Đi cùng với lệnh **/end** )
+* `/end_study` Kết thúc thời gian làm bài 
+   ( Đi cùng với lệnh **/start** )
+
 ### Special Features
 
 #### Switch Persona
@@ -190,5 +203,5 @@ To use the OpenAI API features, follow these steps:
 * `replyall mode` the bot will reply to all messages in the channel without using slash commands (`/chat` will also be unavailable)
 
    > **Warning**
-   > The bot will easily be triggered in `replyall` mode, which could cause program failures
+   > This Bot is currently only in a trial phase, so it may encounter some errors and is being updated now and will continue to be updated in the future.
  ---
