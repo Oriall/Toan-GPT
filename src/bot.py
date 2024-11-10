@@ -73,6 +73,11 @@ def run_discord_bot():
     @discordClient.event
     async def on_voice_state_update(member, before, after):
         voice_client = member.guild.voice_client
+        # Kiểm tra xem thành viên có role "BOT" không
+        bot_role = discord.utils.get(member.guild.roles, name="BOT")
+        if bot_role in member.roles:
+            return  # Bỏ qua thành viên có role "BOT"
+
         if voice_client and after.channel == voice_client.channel:
             # Nếu thành viên mới tham gia kênh thoại và chưa có trong danh sách, thêm vào voice_activity và bắt đầu kiểm tra camera
             if member.id not in voice_activity:
@@ -98,13 +103,13 @@ def run_discord_bot():
                 voice_activity[member.id]["total_time"] += total_time
                 hours, remainder = divmod(voice_activity[member.id]["total_time"], 3600)
                 minutes, seconds = divmod(remainder, 60)
-                
+
                 # Gửi thông báo về thời gian học
                 channel = discord.utils.get(member.guild.text_channels, name='thông-báo-bot')
                 if channel:
                     await channel.send(f"**{member.display_name}** đã học trong vòng {int(hours)} giờ {int(minutes)} phút {int(seconds)} giây trước khi rời kênh thoại.")
 
-                            # Cập nhật thời gian hoạt động dài nhất nếu cần
+
                 if voice_activity[member.id]["total_time"] > longest_record["total_time"]:
                     longest_record["name"] = member.display_name
                     longest_record["total_time"] = voice_activity[member.id]["total_time"]
@@ -123,17 +128,21 @@ def run_discord_bot():
             # Kiểm tra nếu người dùng không bật camera sau 1 phút và vẫn ở trong kênh
             voice_state = member.guild.voice_client.channel
             if not member.voice.self_video and member.voice and member.voice.channel == voice_state and member.id != discordClient.user.id:
-                # Tìm kênh 'thông-báo-bot' để gửi thông báo
-                channel = discord.utils.get(member.guild.text_channels, name='thông-báo-bot')
-                if channel:
-                    await channel.send(f"**{member.display_name}** đã bị kick khỏi phòng thoại vì không bật camera sau 1 phút.")
+                # Kiểm tra lại role "BOT" trước khi kick
+                bot_role = discord.utils.get(member.guild.roles, name="BOT")
+                if bot_role not in member.roles:
+                    # Tìm kênh 'thông-báo-bot' để gửi thông báo
+                    channel = discord.utils.get(member.guild.text_channels, name='thông-báo-bot')
+                    if channel:
+                        await channel.send(f"**{member.display_name}** đã bị kick khỏi phòng thoại vì không bật camera sau 1 phút.")
 
-                # Kick người dùng khỏi phòng
-                await member.move_to(None)  # Kick người dùng khỏi phòng thoại
-                await member.send("Bạn đã bị kick khỏi phòng thoại vì không bật camera sau 1 phút.")
+                    # Kick người dùng khỏi phòng
+                    await member.move_to(None)  # Kick người dùng khỏi phòng thoại
+                    await member.send("Bạn đã bị kick khỏi phòng thoại vì không bật camera sau 1 phút.")
         except asyncio.CancelledError:
             # Bỏ qua nếu nhiệm vụ bị hủy (do người dùng đã bật camera)
             pass
+
 
     @discordClient.tree.command(name="chat", description="Chat với Chat BotGPT")
     async def chat(interaction: discord.Interaction, *, message: str):
