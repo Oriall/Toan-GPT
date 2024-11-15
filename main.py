@@ -4,7 +4,7 @@ from src import bot
 from dotenv import load_dotenv
 from g4f.cookies import set_cookies
 
-
+h
 if __name__ == '__main__':
     set_cookies(".bing.com", {
     "_U": str(os.getenv("BING_COOKIE"))
