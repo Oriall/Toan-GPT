@@ -4,6 +4,8 @@ import discord
 from discord.ext import commands
 from discord.ui import Button, View
 from src.log import logger
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 import random
 import os
 from datetime import datetime, timedelta
@@ -32,10 +34,11 @@ counting_task = None  # Task dùng để đếm thời gian
 start_time = None     # Thời gian bắt đầu đếm
 voice_activity = {}
 # recordings = {}
+uri=os.getenv("MONGO_URI") #Mới sủa lại nhất
 monitoring_tasks = {}
 image_folder = "./img"
 images = [os.path.join(image_folder, img) for img in os.listdir(image_folder) if img.endswith(('.png', '.jpg', '.jpeg'))]
-
+client = MongoClient(uri, server_api=ServerApi('1'))
 # Define the RandomImageView class
 class RandomImageView(View):
     def __init__(self):
@@ -101,6 +104,7 @@ def run_discord_bot():
             if member.id in voice_activity:
                 total_time = (datetime.now() - voice_activity[member.id]["start_time"]).total_seconds()
                 voice_activity[member.id]["total_time"] += total_time
+                await save_user_activity(member.id, voice_activity[member.id]["name"], voice_activity[member.id]["total_time"])
                 hours, remainder = divmod(voice_activity[member.id]["total_time"], 3600)
                 minutes, seconds = divmod(remainder, 60)
 
@@ -119,6 +123,26 @@ def run_discord_bot():
                 monitoring_tasks[member.id].cancel()
                 del monitoring_tasks[member.id]
 
+    async def save_user_activity(member_id, member_name, session_time):
+        db = client['voice_activity_db']
+        collection = db['user_activities']
+
+        # Kiểm tra xem người dùng đã có dữ liệu chưa
+        existing_record = collection.find_one({"user_id": member_id})
+        if existing_record:
+            # Cộng dồn tổng thời gian
+            total_time = existing_record["total_time"] + session_time
+        else:
+            total_time = session_time
+
+        # Cập nhật hoặc thêm mới
+        data = {
+            "user_id": member_id,
+            "name": member_name,
+            "total_time": total_time,
+            "last_updated": datetime.now()
+        }
+        collection.update_one({"user_id": member_id}, {"$set": data}, upsert=True)
 
     async def check_camera(member):
         try:
@@ -188,6 +212,58 @@ def run_discord_bot():
             await interaction.followup.send(
                 "> **WARN: You already on public mode. If you want to switch to private mode, use `/private`**")
             logger.info("You already on public mode!")
+
+    @discordClient.tree.command(name="top", description="Hiển thị bảng xếp hạng thời gian học của các thành viên.")
+    async def show_top(interaction: discord.Interaction):
+        db = client['voice_activity_db']
+        collection = db['user_activities']
+
+        # Lấy dữ liệu từ MongoDB và sắp xếp theo tổng thời gian học (giảm dần)
+        records = list(collection.find().sort('total_time', -1))
+
+        # Tạo embed để hiển thị bảng xếp hạng
+        embed = discord.Embed(
+            title="🏆 Bảng Xếp Hạng Thời Gian Hoạt Động",
+            description="Top thành viên có thời gian học nhiều nhất 🔊",
+            color=discord.Color.gold()
+        )
+        embed.set_thumbnail(url="https://i.pinimg.com/originals/ea/fb/38/eafb38b7973b0f65459532cc17e16fbe.gif")
+        # Thêm thông tin top thành viên vào embed
+        for i, record in enumerate(records[:10], start=1):  # Hiển thị top 10
+            hours, remainder = divmod(record['total_time'], 3600)
+            minutes, seconds = divmod(remainder, 60)
+            time_string = f"{int(hours)} giờ {int(minutes)} phút {int(seconds)} giây"
+            
+            embed.add_field(
+                name=f"#{i} | {record['name']}",
+                value=f"ID: `{record['user_id']}`\nThời gian học: {time_string}",
+                inline=False
+            )
+
+        await interaction.response.send_message(embed=embed)
+
+    @discordClient.tree.command(name="version", description="Hiển thị thông tin cập nhật mới nhất của bot.")
+    async def version(interaction: discord.Interaction):
+        updates = [
+            "🆕 **1.0.1** - Thêm lệnh `/top` để hiển thị bảng xếp hạng thời gian học.",
+            "🔧 **1.0.2** - Cải thiện hiệu suất khi lưu thời gian học vào database MongoDB.",
+            "✨ **1.0.3** - Thêm lệnh `/version` để xem các bản cập nhật mới nhất.",
+            "🔥 **1.0.4** - Thêm bot `a3k56` quản lý các kênh trong danh mục riêng."
+        ]
+
+        embed = discord.Embed(
+            title="📦 Cập Nhật Mới Nhất (Version 1.0)",
+            description="Danh sách các bản cập nhật và cải tiến gần đây cho bot:",
+            color=discord.Color.green()
+        )
+
+        for update in updates:
+            embed.add_field(name="•", value=update, inline=False)
+        
+        # Thêm ảnh GIF
+        embed.set_thumbnail(url="https://i.pinimg.com/originals/87/5d/6a/875d6a6b9f4f45578e07f995d51d4973.gif")
+
+        await interaction.response.send_message(embed=embed)
 
 
     @discordClient.tree.command(name="replyall", description="Toggle replyAll access")

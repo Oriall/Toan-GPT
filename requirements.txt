@@ -7,3 +7,4 @@ g4f==0.2.7.2
 g4f[all]
 yt-dlp
 PyNaCl
+pymongo
