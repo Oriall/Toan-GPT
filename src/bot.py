@@ -34,7 +34,7 @@ counting_task = None  # Task dùng để đếm thời gian
 start_time = None     # Thời gian bắt đầu đếm
 voice_activity = {}
 # recordings = {}
-uri=os.getenv("MONGO_URI") #Mới sủa lại nhất
+uri=os.getenv("MONGO_URI")
 monitoring_tasks = {}
 image_folder = "./img"
 images = [os.path.join(image_folder, img) for img in os.listdir(image_folder) if img.endswith(('.png', '.jpg', '.jpeg'))]
@@ -214,31 +214,227 @@ def run_discord_bot():
             logger.info("You already on public mode!")
 
     @discordClient.tree.command(name="top", description="Hiển thị bảng xếp hạng thời gian học của các thành viên.")
-    async def show_top(interaction: discord.Interaction):
+    @app_commands.describe(duration="Khoảng thời gian xếp hạng (Day, Week, Month)")
+    @app_commands.choices(
+        duration=[
+            app_commands.Choice(name="Day", value="day"),
+            app_commands.Choice(name="Week", value="week"),
+            app_commands.Choice(name="Month", value="month")
+        ]
+    )
+    async def show_top(interaction: discord.Interaction, duration: app_commands.Choice[str]):
         db = client['voice_activity_db']
         collection = db['user_activities']
 
-        # Lấy dữ liệu từ MongoDB và sắp xếp theo tổng thời gian học (giảm dần)
-        records = list(collection.find().sort('total_time', -1))
+        # Xác định khoảng thời gian
+        now = datetime.now()
+        if duration.value == "day":
+            time_threshold = now - timedelta(days=1)
+        elif duration.value == "week":
+            time_threshold = now - timedelta(weeks=1)
+        elif duration.value == "month":
+            time_threshold = now - timedelta(days=30)
+
+        # Lọc dữ liệu từ MongoDB dựa trên thời gian cập nhật
+        records = list(collection.find({"last_updated": {"$gte": time_threshold}}).sort('total_time', -1))
+
+        if not records:
+            await interaction.response.send_message(f"Không có dữ liệu cho khoảng thời gian {duration.name}.")
+            return
 
         # Tạo embed để hiển thị bảng xếp hạng
         embed = discord.Embed(
-            title="🏆 Bảng Xếp Hạng Thời Gian Hoạt Động",
-            description="Top thành viên có thời gian học nhiều nhất 🔊",
+            title=f"🏆 Bảng Xếp Hạng Thời Gian Hoạt Động ({duration.name})",
+            description="```plaintext\n" + "Rank    User              Time\n" + "---------------------------------" + "\n",
             color=discord.Color.gold()
         )
         embed.set_thumbnail(url="https://i.pinimg.com/originals/ea/fb/38/eafb38b7973b0f65459532cc17e16fbe.gif")
-        # Thêm thông tin top thành viên vào embed
+
+        medals = ["🥇", "🥈", "🥉"]
         for i, record in enumerate(records[:10], start=1):  # Hiển thị top 10
             hours, remainder = divmod(record['total_time'], 3600)
             minutes, seconds = divmod(remainder, 60)
-            time_string = f"{int(hours)} giờ {int(minutes)} phút {int(seconds)} giây"
-            
-            embed.add_field(
-                name=f"#{i} | {record['name']}",
-                value=f"ID: `{record['user_id']}`\nThời gian học: {time_string}",
-                inline=False
+            time_string = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
+            medal = medals[i - 1] if i <= 3 else ""
+
+            # Định dạng tên và thời gian
+            user_name = record['name'][:12].ljust(12)  # Cắt ngắn hoặc làm dài tên
+            line = f"{i:<3}{medal:<3} {user_name:<15} {time_string}"
+            embed.description += f"{line}\n"
+
+        embed.description += "```"
+        await interaction.response.send_message(embed=embed)
+
+    @discordClient.tree.command(name="reset_top", description="Reset toàn bộ dữ liệu bảng xếp hạng.")
+    @app_commands.checks.has_permissions(administrator=True)  # Chỉ admin mới được dùng lệnh này
+    async def reset_top(interaction: discord.Interaction):
+        db = client['voice_activity_db']
+        collection = db['user_activities']
+
+        # Xác nhận xóa dữ liệu
+        await interaction.response.send_message(
+            content="Bạn có chắc chắn muốn reset toàn bộ dữ liệu bảng xếp hạng? Phản hồi `yes` để xác nhận trong 30 giây.",
+            ephemeral=True
+        )
+
+        def check(m):
+            return m.author == interaction.user and m.content.lower() == "yes"
+
+        try:
+            msg = await discordClient.wait_for("message", timeout=30.0, check=check)
+            if msg:
+                collection.delete_many({})  # Xóa toàn bộ dữ liệu trong collection
+                await interaction.followup.send("Dữ liệu bảng xếp hạng đã được reset thành công!", ephemeral=True)
+        except asyncio.TimeoutError:
+            await interaction.followup.send("Thời gian xác nhận đã hết. Dữ liệu không bị xóa.", ephemeral=True)
+
+    @discordClient.tree.command(name="profile", description="Hiển thị thông tin profile cá nhân hoặc của người dùng khác.")
+    @app_commands.describe(member="Người dùng muốn xem profile (để trống để xem của chính bạn).")
+    async def profile(interaction: discord.Interaction, member: discord.Member = None):
+        db = client['voice_activity_db']
+        collection = db['user_activities']
+
+        # Nếu không chọn member, lấy profile của chính người dùng
+        target_user = member or interaction.user
+        user_data = collection.find_one({"user_id": target_user.id})
+
+        if not user_data:
+            await interaction.response.send_message(
+                f"Không tìm thấy dữ liệu của {'bạn' if target_user == interaction.user else target_user.display_name}.",
+                ephemeral=True
             )
+            return
+
+        # Tính toán XP và Rank
+        total_xp = int(user_data["total_time"] // 60)  # 1 phút = 1 XP
+        rank = determine_rank(total_xp)
+
+        # Hình ảnh rank theo cấp độ
+        rank_images = {
+            "sắt": "https://i.pinimg.com/originals/5b/d9/89/5bd98999e33567902b7e95b33c2db20e.gif",
+            "đồng": "https://i.pinimg.com/originals/e9/c8/d7/e9c8d789f753088fe97057a3bdadfa75.gif",
+            "vàng": "https://tenor.com/vi/view/league-of-legends-rankup-gold-gif-21928002",
+            "bạch kim": "https://tenor.com/vi/view/league-of-legends-rankup-platinum-gif-21927987",
+            "kim cương": "https://i.pinimg.com/originals/9c/d0/b4/9cd0b467e35e79fdb14e5cfc89c56201.gif",
+            "tinh anh": "https://i.pinimg.com/originals/43/25/1a/43251a05025f722d110ad73852f7ac66.gif",
+            "cao thủ": "https://tenor.com/vi/view/challenger-rankup-lol-gif-10205023597477411344"
+        }
+        rank_image = rank_images.get(rank.split()[0].lower(), None)  # Lấy hình ảnh dựa trên tên rank
+
+        # Embed 1: Hiển thị hình ảnh rank
+        embed_rank = discord.Embed(
+            title="🏅 Rank của bạn",
+            description=f"**{rank}**",
+            color=discord.Color.dark_gray()
+        )
+        if rank_image:
+            embed_rank.set_image(url=rank_image)
+
+        # Embed 2: Hồ sơ học tập
+        embed_profile = discord.Embed(
+            title=f"🎓 Hồ Sơ Học Tập của {target_user.display_name}",
+            color=discord.Color.dark_gray()
+        )
+        embed_profile.add_field(name="🕒 Tổng Thời Gian Học", value=f"{user_data['total_time'] // 3600} giờ", inline=True)
+        embed_profile.add_field(name="⭐ XP", value=f"{total_xp} XP", inline=True)
+        embed_profile.add_field(name="🏅 Rank", value=f"{rank}", inline=True)
+        embed_profile.set_thumbnail(url=target_user.avatar.url if target_user.avatar else target_user.default_avatar.url)
+
+        # Gửi hai embed
+        await interaction.response.send_message(embeds=[embed_rank, embed_profile])
+
+
+
+
+    def determine_rank(xp):
+        """Xác định rank dựa trên tổng XP"""
+        if xp <= 500:
+            return "Sắt 3"
+        elif xp <= 1000:
+            return "Sắt 2"
+        elif xp <= 1500:
+            return "Sắt 1"
+        elif xp <= 2000:
+            return "Đồng 3"
+        elif xp <= 3000:
+            return "Đồng 2"
+        elif xp <= 4000:
+            return "Đồng 1"
+        elif xp <= 5000:
+            return "Vàng 3"
+        elif xp <= 6000:
+            return "Vàng 2"
+        elif xp <= 7000:
+            return "Vàng 1"
+        elif xp <= 8000:
+            return "Bạch Kim 3"
+        elif xp <= 9000:
+            return "Bạch Kim 2"
+        elif xp <= 10000:
+            return "Bạch Kim 1"
+        elif xp <= 11500:
+            return "Kim Cương 3"
+        elif xp <= 13000:
+            return "Kim Cương 2"
+        elif xp <= 14500:
+            return "Kim Cương 1"
+        elif xp <= 16000:
+            return "Tinh Anh 3"
+        elif xp <= 17500:
+            return "Tinh Anh 2"
+        elif xp <= 19000:
+            return "Tinh Anh 1"
+        elif xp <= 22000:
+            return "Cao Thủ 5"
+        elif xp <= 25000:
+            return "Cao Thủ 4"
+        elif xp <= 28000:
+            return "Cao Thủ 3"
+        elif xp <= 31000:
+            return "Cao Thủ 2"
+        elif xp <= 40000:
+            return "Cao Thủ 1"
+        else:
+            return "Đại Cao Thủ"
+
+    @discordClient.tree.command(name="rank", description="Hiển thị thông tin chi tiết về các mức rank.")
+    async def rank(interaction: discord.Interaction):
+        embed = discord.Embed(
+            title="🏅 Hệ Thống Rank",
+            description="Chi tiết về các mức rank dựa trên thời gian hoạt động (1 phút = 1 XP):",
+            color=discord.Color.dark_theme()
+        )
+        embed.set_thumbnail(url="https://i.pinimg.com/originals/e7/90/f2/e790f26acee065b349c5dabd840638ae.gif")
+        
+        rank_details = [
+            ("Sắt 3", "0 - 500 XP"),
+            ("Sắt 2", "501 - 1000 XP"),
+            ("Sắt 1", "1001 - 1500 XP"),
+            ("Đồng 3", "1501 - 2000 XP"),
+            ("Đồng 2", "2001 - 3000 XP"),
+            ("Đồng 1", "3001 - 4000 XP"),
+            ("Vàng 3", "4001 - 5000 XP"),
+            ("Vàng 2", "5001 - 6000 XP"),
+            ("Vàng 1", "6001 - 7000 XP"),
+            ("Bạch Kim 3", "7001 - 8000 XP"),
+            ("Bạch Kim 2", "8001 - 9000 XP"),
+            ("Bạch Kim 1", "9001 - 10,000 XP"),
+            ("Kim Cương 3", "10,001 - 11,500 XP"),
+            ("Kim Cương 2", "11,501 - 13,000 XP"),
+            ("Kim Cương 1", "13,001 - 14,500 XP"),
+            ("Tinh Anh 3", "14,501 - 16,000 XP"),
+            ("Tinh Anh 2", "16,001 - 17,500 XP"),
+            ("Tinh Anh 1", "17,501 - 19,000 XP"),
+            ("Cao Thủ 5", "19,001 - 22,000 XP"),
+            ("Cao Thủ 4", "22,001 - 25,000 XP"),
+            ("Cao Thủ 3", "25,001 - 28,000 XP"),
+            ("Cao Thủ 2", "28,001 - 31,000 XP"),
+            ("Cao Thủ 1", "31,001 - 40,000 XP"),
+            ("Đại Cao Thủ", "Trên 40,000 XP"),
+        ]
+
+        for rank, range_xp in rank_details:
+            embed.add_field(name=f"🎖 {rank}", value=f"**XP**: {range_xp}", inline=False)
 
         await interaction.response.send_message(embed=embed)
 
@@ -248,11 +444,25 @@ def run_discord_bot():
             "🆕 **1.0.1** - Thêm lệnh `/top` để hiển thị bảng xếp hạng thời gian học.",
             "🔧 **1.0.2** - Cải thiện hiệu suất khi lưu thời gian học vào database MongoDB.",
             "✨ **1.0.3** - Thêm lệnh `/version` để xem các bản cập nhật mới nhất.",
-            "🔥 **1.0.4** - Thêm bot `a3k56` quản lý các kênh trong danh mục riêng."
+            "🔥 **1.0.4** - Thêm bot `a3k56` quản lý các kênh trong danh mục riêng.",
+            "💡 **1.1.0** - Thêm lệnh `/profile` với hệ thống XP và Rank mới.",
+            "🌟 **1.1.1** - Bổ sung lệnh `/reset_top` để reset bảng xếp hạng thời gian học.(Quyền Admin)",
+            "⚡ **1.2.0** - Cải tiến giao diện hiển thị thời gian học trong embed của `/top`.",
+            "🏅 **1.2.1** - Chi tiết hệ thống **XP & Rank**:",
+            "   • **1 phút = 1 XP.**",
+            "   • **Cấp bậc:**",
+            "      - Sắt: 0-1500 XP (3 cấp).",
+            "      - Đồng: 1501-4000 XP (3 cấp).",
+            "      - Vàng: 4001-7000 XP (3 cấp).",
+            "      - Bạch Kim: 7001-10000 XP (3 cấp).",
+            "      - Kim Cương: 10,001-14,500 XP (3 cấp).",
+            "      - Tinh Anh: 14,501-19,000 XP (3 cấp).",
+            "      - Cao Thủ: 19,001-40,000 XP (5 cấp).",
+            "      - Đại Cao Thủ: >40,000 XP."
         ]
 
         embed = discord.Embed(
-            title="📦 Cập Nhật Mới Nhất (Version 1.0)",
+            title="📦 Cập Nhật Mới Nhất (Version 1.1)",
             description="Danh sách các bản cập nhật và cải tiến gần đây cho bot:",
             color=discord.Color.green()
         )
@@ -702,10 +912,13 @@ def run_discord_bot():
             ( Đi cùng với lệnh **/end** )
         - `/end_study` Kết thúc thời gian làm bài 
             ( Đi cùng với lệnh **/start** )
+        - `/top` Hiện thị bảng xếp hạng
+        - `/profile` Hiện thị hồ sơ học tập
 
         **🏆 Other - (2)**
         - `/album` Ngẫu nhiên lấy một bức ảnh trong tuyển tập album A3K56
         - `/addbot` Lấy link mời Bot vào sever
+        - `/version` Thông tin cập nhật mới của Bot
 
         `Lưu Ý`: Sản phẩm chỉ là đồ vọc nên vẫn còn nhiều sai xót, vẫn đang tiếp tục phát triển và nâng cấp trong tương lai..
                                         
