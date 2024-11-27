@@ -511,199 +511,120 @@ def run_discord_bot():
 
         await interaction.response.send_message(embed=embed)
 
-    @discordClient.tree.command(name="gacha", description="Tiêu 15 XP để thử vận may và nhận lá bài ngẫu nhiên!")
-    async def gacha(interaction: discord.Interaction):
-        db = client['voice_activity_db']
-        collection = db['user_activities']
+    # @discordClient.tree.command(name="gacha", description="Thử vận may của bạn bằng cách tiêu tốn 20 XP.")
+    # async def gacha(interaction: discord.Interaction):
+    #     db = client['voice_activity_db']
+    #     collection = db['user_activities']
 
-        user_data = collection.find_one({"user_id": interaction.user.id})
+    #     # Lấy thông tin người dùng từ DB
+    #     user_data = collection.find_one({"user_id": interaction.user.id})
+    #     if not user_data:
+    #         await interaction.response.send_message("Bạn chưa có dữ liệu trong hệ thống. Vui lòng tham gia hoạt động trước!", ephemeral=True)
+    #         return
 
-        # Kiểm tra nếu người dùng không có đủ XP
-        if not user_data or user_data.get("total_time", 0) < 15 * 60:  # 15 phút tương ứng 20 XP
-            await interaction.response.send_message(
-                "Bạn không có đủ **20 XP** (tương đương 15 phút) để thực hiện gacha.",
-                ephemeral=True
-            )
-            return
+    #     # Kiểm tra nếu người dùng đủ XP
+    #     if user_data["total_time"] // 60 < 20:  # 1 phút = 1 XP
+    #         await interaction.response.send_message("Bạn không đủ 20 XP để tham gia gacha!", ephemeral=True)
+    #         return
 
+    #     # Trừ 20 XP
+    #     collection.update_one(
+    #         {"user_id": interaction.user.id},
+    #         {"$inc": {"total_time": -20 * 60}}  # 20 XP = 20 * 60 giây
+    #     )
+
+    #     # Tỷ lệ các lá bài (tổng 100%)
+    #     cards = [
+    #         {"xp": 5, "probability": 50, "image": "https://i.ibb.co/7Cd1YSh/IMG-20220922-091545.jpg"},  # Phần lớn
+    #         {"xp": 10, "probability": 20, "image": "https://i.ibb.co/sp4mCgD/IMG-20230324-160210.jpg"}, # Bình thường 1
+    #         {"xp": 20, "probability": 15, "image": "https://i.ibb.co/zb4B8dZ/IMG-2599.jpg"}, # Bình thường 2
+    #         {"xp": 30, "probability": 6, "image": "https://i.ibb.co/xsrF9kL/IMG-1355.jpg"},  # Khá hiếm
+    #         {"xp": 50, "probability": 4, "image": "https://ibb.co/Np8tztz"},  # Hiếm
+    #         {"xp": 100, "probability": 2.5, "image": "https://i.ibb.co/jGcbFbF/anh-bg.jpg"}, # Rất hiếm 1
+    #         {"xp": 150, "probability": 1.5, "image": "https://i.ibb.co/QPv9cRS/lp.jpg"}, # Rất hiếm 2
+    #         {"xp": 300, "probability": 0.8, "image": "https://i.ibb.co/42vrHk6/IMG-1037-HEIC-1.jpg"}, # Xử thi
+    #         {"xp": 500, "probability": 0.2, "image": "https://i.ibb.co/v1J9hqC/df.jpg"}, # Huyền thoại
+    #         {"xp": 1000, "probability": 0.05, "image": "https://i.ibb.co/PCYtvJf/image.jpg"} # 1 lá duy nhất
+    #     ]
+
+    #     # Random lá bài dựa trên tỷ lệ
+    #     weights = [card["probability"] for card in cards]
+    #     selected_card = random.choices(cards, weights=weights, k=1)[0]
+
+    #     # Cộng XP cho người dùng
+    #     collection.update_one(
+    #         {"user_id": interaction.user.id},
+    #         {"$inc": {"total_time": selected_card["xp"] * 60}}  # XP = giây
+    #     )
+
+    #     # Tạo embed hiển thị kết quả
+    #     embed = discord.Embed(
+    #         title="🎉 Gacha Thành Công!",
+    #         description=f"Bạn đã nhận được lá bài đặc biệt! \n💎 **{selected_card['xp']} XP** đã được cộng vào tài khoản của bạn!",
+    #         color=discord.Color.from_str("#FF4545")
+    #     )
+    #     embed.set_image(url=selected_card["image"])
+    #     embed.set_footer(text=f"Chúc bạn may mắn lần sau!", icon_url=interaction.user.avatar.url if interaction.user.avatar else None)
+
+    #     # Đợi 5 giây trước khi hiển thị kết quả
+    #     await interaction.response.defer()
+    #     await asyncio.sleep(5)
+    #     await interaction.followup.send(embed=embed)
         
-        collection.update_one(
-            {"user_id": interaction.user.id},
-            {"$inc": {"total_time": -15 * 60}}  # 20 XP = 20 * 60 giây
-        )
+    # @discordClient.tree.command(name="rule_gacha", description="Hiển thị luật chơi và tỷ lệ các lá bài trong gacha.")
+    # async def rule_gacha(interaction: discord.Interaction):
+    #     # Dữ liệu luật và tỷ lệ
+    #     rules = [
+    #         {"name": "Phần lớn", "xp": "+5 XP", "probability": "50%", "image": "https://i.ibb.co/7Cd1YSh/IMG-20220922-091545.jpg"},
+    #         {"name": "Bình thường 1", "xp": "+10 XP", "probability": "20%", "image": "https://i.ibb.co/sp4mCgD/IMG-20230324-160210.jpg"},
+    #         {"name": "Bình thường 2", "xp": "+20 XP", "probability": "15%", "image": "https://i.ibb.co/zb4B8dZ/IMG-2599.jpg"},
+    #         {"name": "Khá hiếm", "xp": "+30 XP", "probability": "6%", "image": "https://i.ibb.co/xsrF9kL/IMG-1355.jpg"},
+    #         {"name": "Hiếm", "xp": "+50 XP", "probability": "4%", "image": "https://ibb.co/Np8tztz"},
+    #         {"name": "Rất hiếm 1", "xp": "+100 XP", "probability": "2.5%", "image": "https://i.ibb.co/jGcbFbF/anh-bg.jpg"},
+    #         {"name": "Rất hiếm 2", "xp": "+150 XP", "probability": "1.5%", "image": "https://i.ibb.co/QPv9cRS/lp.jpg"},
+    #         {"name": "Sử thi", "xp": "+300 XP", "probability": "0.8%", "image": "https://i.ibb.co/42vrHk6/IMG-1037-HEIC-1.jpg"},
+    #         {"name": "Huyền thoại", "xp": "+500 XP", "probability": "0.2%", "image": "https://i.ibb.co/v1J9hqC/df.jpg"},
+    #         {"name": "1 lá duy nhất", "xp": "+1000 XP", "probability": "0.05%", "image": "https://i.ibb.co/PCYtvJf/image.jpg"},
+    #     ]
 
-        # Tỷ lệ các lá bài (tổng 100%)
-        cards = [
-            {"xp": -50, "probability": 5, "image": "https://i.ibb.co/hfg8Tcw/question-card.jpg", "name": "C"},  # Hỏi chấm
-            {"xp": 0, "probability": 20, "image": "https://i.ibb.co/7Cd1YSh/IMG-20220922-091545.jpg", "name": "C+"},  # Phần lớn
-            {"xp": 10, "probability": 25, "image": "https://i.ibb.co/sp4mCgD/IMG-20230324-160210.jpg", "name": "R"},  # Bình thường 1
-            {"xp": 20, "probability": 20, "image": "https://i.ibb.co/zb4B8dZ/IMG-2599.jpg", "name": "R+"},  # Bình thường 2
-            {"xp": 30, "probability": 12, "image": "https://i.ibb.co/xsrF9kL/IMG-1355.jpg", "name": "SSR"},  # Khá hiếm
-            {"xp": 50, "probability": 10, "image": "https://ibb.co/Np8tztz", "name": "SSR+"},  # Hiếm
-            {"xp": 100, "probability": 5, "image": "https://i.ibb.co/jGcbFbF/anh-bg.jpg", "name": "UR"},  # Rất hiếm 1
-            {"xp": 150, "probability": 1.5, "image": "https://i.ibb.co/QPv9cRS/lp.jpg", "name": "UR+"},  # Rất hiếm 2
-            {"xp": 300, "probability": 1, "image": "https://i.ibb.co/42vrHk6/IMG-1037-HEIC-1.jpg", "name": "M+"},  # Sử thi
-            {"xp": 500, "probability": 0.4, "image": "https://i.ibb.co/v1J9hqC/df.jpg", "name": "EX"},  # Huyền thoại
-            {"xp": 1000, "probability": 0.1, "image": "https://i.ibb.co/PCYtvJf/image.jpg", "name": "LEGEND"}  # 1 lá duy nhất
-        ]
+    #     # Tạo embed luật gacha
+    #     embed = discord.Embed(
+    #         title="🎲 Luật Chơi Gacha",
+    #         description=(
+    #             "Tiêu tốn **20 XP** để thực hiện gacha.\n\n"
+    #             "Các loại lá bài và tỷ lệ nhận được:\n"
+    #             "```"
+    #             "Tên            XP           Tỷ lệ\n"
+    #             "----------------------------------\n"
+    #             "Phần lớn      +5 XP        50%\n"
+    #             "Bình thường 1 +10 XP       20%\n"
+    #             "Bình thường 2 +20 XP       15%\n"
+    #             "Khá hiếm      +30 XP       6%\n"
+    #             "Hiếm          +50 XP       4%\n"
+    #             "Rất hiếm 1    +100 XP      2.5%\n"
+    #             "Rất hiếm 2    +150 XP      1.5%\n"
+    #             "Sử thi        +300 XP      0.8%\n"
+    #             "Huyền thoại   +500 XP      0.2%\n"
+    #             "1 lá duy nhất +1000 XP     0.05%\n"
+    #             "```"
+    #         ),
+    #         color=discord.Color.orange()
+    #     )
 
-        
-        roll = random.uniform(0, 100)
-        cumulative_probability = 0
-        selected_card = None
+    #     # Thêm hình ảnh từng lá bài
+    #     for rule in rules:
+    #         embed.add_field(
+    #             name=f"{rule['name']} ({rule['xp']})",
+    #             value=f"**Tỷ lệ:** {rule['probability']}",
+    #             inline=False
+    #         )
 
-        for card in cards:
-            cumulative_probability += card["probability"]
-            if roll <= cumulative_probability:
-                selected_card = card
-                break
-
-        
-        if selected_card:
-            collection.update_one(
-                {"user_id": interaction.user.id},
-                {"$inc": {"total_time": selected_card["xp"] * 60}}  # XP = phút * 60 giây
-            )
-
-      
-        embed = discord.Embed(
-            title="🎲 Kết Quả Gacha!",
-            description=f"Bạn đã tiêu **15 XP** và nhận được lá bài:",
-            color=discord.Color.orange()
-        )
-        embed.add_field(name="🎁 Lá bài", value=f"**{selected_card['name']}**", inline=False)
-        embed.add_field(name="⭐ XP Nhận Được", value=f"{'+' if selected_card['xp'] >= 0 else ''}{selected_card['xp']} XP", inline=False)
-        embed.set_image(url=selected_card["image"])
-        embed.set_footer(text="Chúc bạn may mắn lần sau!", icon_url="https://i.pinimg.com/originals/36/8d/0d/368d0d9c9fca6814127972f33137d788.gif")
-
-       
-        await interaction.response.send_message(embed=embed)
-
-        
-    @discordClient.tree.command(name="rule_gacha", description="Hiển thị luật chơi và tỷ lệ nhận bài trong gacha.")
-    async def rule_gacha(interaction: discord.Interaction):
-        # Embed chứa luật gacha
-        embed = discord.Embed(
-            title="🎲 Luật Chơi Gacha 🎲",
-            description="Sử dụng **15 XP** mỗi lần để tham gia Gacha và có cơ hội nhận được các lá bài với phần thưởng khác nhau! Đây là các lá bài và tỷ lệ nhận được:",
-            color=discord.Color.orange()
-        )
-
-        # Danh sách các loại bài
-        rules = [
-            {"name": "❓ Hỏi chấm", "xp": "-50 XP", "probability": "5%", "image": "https://i.ibb.co/hfg8Tcw/question-card.jpg"},
-            {"name": "🟠 Phần lớn", "xp": "+0 XP", "probability": "20%", "image": "https://i.ibb.co/7Cd1YSh/IMG-20220922-091545.jpg"},
-            {"name": "🔵 Bình thường 1", "xp": "+10 XP", "probability": "25%", "image": "https://i.ibb.co/sp4mCgD/IMG-20230324-160210.jpg"},
-            {"name": "🟢 Bình thường 2", "xp": "+20 XP", "probability": "20%", "image": "https://i.ibb.co/zb4B8dZ/IMG-2599.jpg"},
-            {"name": "🟡 Khá hiếm", "xp": "+30 XP", "probability": "12%", "image": "https://i.ibb.co/xsrF9kL/IMG-1355.jpg"},
-            {"name": "🔴 Hiếm", "xp": "+50 XP", "probability": "10%", "image": "https://ibb.co/Np8tztz"},
-            {"name": "💎 Rất hiếm 1", "xp": "+100 XP", "probability": "5%", "image": "https://i.ibb.co/jGcbFbF/anh-bg.jpg"},
-            {"name": "💎 Rất hiếm 2", "xp": "+150 XP", "probability": "1.5%", "image": "https://i.ibb.co/QPv9cRS/lp.jpg"},
-            {"name": "🌟 Sử thi", "xp": "+300 XP", "probability": "1%", "image": "https://i.ibb.co/42vrHk6/IMG-1037-HEIC-1.jpg"},
-            {"name": "🌌 Huyền thoại", "xp": "+500 XP", "probability": "0.4%", "image": "https://i.ibb.co/v1J9hqC/df.jpg"},
-            {"name": "🏆 1 lá duy nhất", "xp": "+1000 XP", "probability": "0.1%", "image": "https://i.ibb.co/PCYtvJf/image.jpg"}
-        ]
-
-        # Thêm thông tin từng loại bài vào Embed
-        for rule in rules:
-            embed.add_field(
-                name=f"{rule['name']}",
-                value=f"**XP:** {rule['xp']}\n**Tỷ lệ:** {rule['probability']}",
-                inline=False
-            )
-
-        # Chèn hình ảnh minh họa
-        embed.set_thumbnail(url="https://i.ibb.co/v1J9hqC/df.jpg")
-        embed.set_footer(
-            text="Hãy thử vận may với /gacha hoặc /all_in!",
-            icon_url="https://i.pinimg.com/originals/36/8d/0d/368d0d9c9fca6814127972f33137d788.gif"
-        )
-
-        # Gửi Embed đến người dùng
-        await interaction.response.send_message(embed=embed)
-
-    @discordClient.tree.command(name="all_in", description="Thử vận may bằng cách thực hiện gacha 10 lần liên tiếp!")
-    async def all_in(interaction: discord.Interaction):
-        db = client['voice_activity_db']
-        collection = db['user_activities']
-
-        user_data = collection.find_one({"user_id": interaction.user.id})
-
-        # Kiểm tra nếu người dùng không có đủ XP cho 10 lần gacha
-        total_xp_required = 15 * 60 * 10  # 15 phút * 60 giây * 10 lần
-        if not user_data or user_data.get("total_time", 0) < total_xp_required:
-            await interaction.response.send_message(
-                f"Bạn không có đủ **200 XP** (tương đương 150 phút) để thực hiện 10 lần gacha.",
-                ephemeral=True
-            )
-            return
-
-        # Trừ tổng XP cần thiết cho 10 lần gacha
-        collection.update_one(
-            {"user_id": interaction.user.id},
-            {"$inc": {"total_time": -total_xp_required}}
-        )
-
-        # Tỷ lệ các lá bài (tổng 100%)
-        cards = [
-            {"xp": -50, "probability": 5, "image": "https://i.ibb.co/7Cd1YSh/IMG-20220922-091545.jpg", "name": "C"},  # Hỏi chấm
-            {"xp": 0, "probability": 20, "image": "https://i.ibb.co/7Cd1YSh/IMG-20220922-091545.jpg", "name": "C+"},  # Phần lớn
-            {"xp": 10, "probability": 25, "image": "https://i.ibb.co/sp4mCgD/IMG-20230324-160210.jpg", "name": "R"},  # Bình thường 1
-            {"xp": 20, "probability": 20, "image": "https://i.ibb.co/zb4B8dZ/IMG-2599.jpg", "name": "R+"},  # Bình thường 2
-            {"xp": 30, "probability": 12, "image": "https://i.ibb.co/xsrF9kL/IMG-1355.jpg", "name": "SSR"},  # Khá hiếm
-            {"xp": 50, "probability": 10, "image": "https://ibb.co/Np8tztz", "name": "SSR+"},  # Hiếm
-            {"xp": 100, "probability": 5, "image": "https://i.ibb.co/jGcbFbF/anh-bg.jpg", "name": "UR"},  # Rất hiếm 1
-            {"xp": 150, "probability": 1.5, "image": "https://i.ibb.co/QPv9cRS/lp.jpg", "name": "UR+"},  # Rất hiếm 2
-            {"xp": 300, "probability": 1, "image": "https://i.ibb.co/42vrHk6/IMG-1037-HEIC-1.jpg", "name": "M+"},  # Sử thi
-            {"xp": 500, "probability": 0.4, "image": "https://i.ibb.co/v1J9hqC/df.jpg", "name": "EX"},  # Huyền thoại
-            {"xp": 1000, "probability": 0.1, "image": "https://i.ibb.co/PCYtvJf/image.jpg", "name": "LEGEND"}  # 1 lá duy nhất
-        ]
-
-        # Kết quả 10 lần gacha
-        results = []
-        total_xp_gained = 0
-
-        for _ in range(10):
-            roll = random.uniform(0, 100)
-            cumulative_probability = 0
-            selected_card = None
-
-            for card in cards:
-                cumulative_probability += card["probability"]
-                if roll <= cumulative_probability:
-                    selected_card = card
-                    break
-
-            if selected_card:
-                # Cộng XP của từng lần gacha
-                collection.update_one(
-                    {"user_id": interaction.user.id},
-                    {"$inc": {"total_time": selected_card["xp"] * 60}}
-                )
-                results.append(selected_card)
-                total_xp_gained += selected_card["xp"]
-
-        # Tạo Embed kết quả
-        embed = discord.Embed(
-            title="🎲 Kết Quả All-In!",
-            description=f"Bạn đã thực hiện **10 lần gacha** và đây là kết quả:",
-            color=discord.Color.orange()
-        )
-        for i, result in enumerate(results, start=1):
-            embed.add_field(
-                name=f"Lần {i}: {result['name']}",
-                value=f"⭐ XP: {'+' if result['xp'] >= 0 else ''}{result['xp']} XP",
-                inline=False
-            )
-        embed.add_field(
-            name="Tổng XP Nhận Được",
-            value=f"{'+' if total_xp_gained >= 0 else ''}{total_xp_gained} XP",
-            inline=False
-        )
-        embed.set_footer(text="Chúc bạn may mắn lần sau!", icon_url="https://i.pinimg.com/originals/36/8d/0d/368d0d9c9fca6814127972f33137d788.gif")
-
-        # Gửi kết quả cho người dùng
-        await interaction.response.send_message(embed=embed)
+    #     # Thêm footer và gửi embed
+    #     embed.set_footer(
+    #         text="Chúc bạn may mắn khi thử vận may!",
+    #         icon_url="https://i.pinimg.com/originals/36/8d/0d/368d0d9c9fca6814127972f33137d788.gif"
+    #     )
+    #     await interaction.response.send_message(embed=embed)
 
     @discordClient.tree.command(name="replyall", description="Toggle replyAll access")
     async def replyall(interaction: discord.Interaction):
