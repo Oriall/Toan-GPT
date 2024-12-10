@@ -62,6 +62,7 @@ If you possess an OpenAI Plus account, utilizing the OpenAI provider is recommen
 
 > [!CAUTION]
 > Ensure that your `a.har` file is stored securely, as it may contain sensitive information.
+> This code except src.py is not my code, This project was originally created not for the purpose of making money, only for research and learning purposes
 >
 > This is not OpenAI API. For API access, refer [Optional: Configuring OpenAI API](#optional-configuring-openai-api)
 
