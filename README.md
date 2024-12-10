@@ -5,6 +5,8 @@
 ---
 > [!IMPORTANT]
 >
+> This project was originally created not for the purpose of making money, only for research and learning purposes
+> 
 > **Major Update (2024/11):**
 > - Due to instability issues with GPT-4 model, we have defaulted back to GPT-3.5-turbo
 > - Gemini-Pro and GPT-4 now supported for free
