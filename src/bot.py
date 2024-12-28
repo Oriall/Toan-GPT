@@ -313,12 +313,13 @@ def run_discord_bot():
         rank_images = {
             "sắt": "https://i.pinimg.com/originals/5b/d9/89/5bd98999e33567902b7e95b33c2db20e.gif",
             "đồng": "https://i.pinimg.com/originals/e9/c8/d7/e9c8d789f753088fe97057a3bdadfa75.gif",
+            "bạc": "https://i.pinimg.com/originals/25/10/5d/25105dc600b7430b4f6cd83dc6d25986.gif",
             "vàng": "https://tenor.com/vi/view/league-of-legends-rankup-gold-gif-21928002",
-            "bạch kim": "https://tenor.com/vi/view/league-of-legends-rankup-platinum-gif-21927987",
+            "bạch kim": "https://media1.tenor.com/m/qhQI8dj8HFcAAAAd/league-of-legends-rankup.gif",
             "kim cương": "https://i.pinimg.com/originals/9c/d0/b4/9cd0b467e35e79fdb14e5cfc89c56201.gif",
             "tinh anh": "https://i.pinimg.com/originals/24/79/65/247965dc76dac892df2d4e6b9d7fcc33.gif",
             "cao thủ": "https://i.pinimg.com/originals/43/25/1a/43251a05025f722d110ad73852f7ac66.gif",
-            "đại cao thủ": "https://tenor.com/vi/view/challenger-rankup-lol-gif-10205023597477411344"
+            "siêu cấp vũ trụ": "https://i.pinimg.com/originals/2b/6a/a1/2b6aa10f3fcf035f4ed2d59abd2b07ff.gif"
         }
         rank_image = rank_images.get(rank.split()[0].lower(), None)
 
@@ -327,8 +328,9 @@ def run_discord_bot():
             (0, 500), (501, 1000), (1001, 1500), (1501, 2000), (2001, 3000), (3001, 4000),
             (4001, 5000), (5001, 6000), (6001, 7000), (7001, 8000), (8001, 9000),
             (9001, 10000), (10001, 11500), (11501, 13000), (13001, 14500), (14501, 16000),
-            (16001, 17500), (17501, 19000), (19001, 22000), (22001, 25000), (25001, 28000),
-            (28001, 31000), (31001, 40000), (40001, float('inf'))
+            (16001, 17500), (17501, 19000), (19001, 21000), (21001, 23000), (23001, 25000),
+            (25001, 28000), (28001, 32000), (32001, 37000), (37001, 43000), (43001, 50000),
+            (50001, float('inf'))
         ]
         for i, (min_xp, max_xp) in enumerate(xp_ranges):
             if min_xp <= total_xp <= max_xp:
@@ -377,11 +379,6 @@ def run_discord_bot():
         await interaction.response.send_message(embed=embed)
 
 
-
-
-
-
-
     def determine_rank(xp):
         """Xác định rank dựa trên tổng XP"""
         if xp <= 500:
@@ -397,51 +394,52 @@ def run_discord_bot():
         elif xp <= 4000:
             return "Đồng 1"
         elif xp <= 5000:
-            return "Vàng 3"
+            return "Bạc 3"
         elif xp <= 6000:
-            return "Vàng 2"
+            return "Bạc 2"
         elif xp <= 7000:
-            return "Vàng 1"
+            return "Bạc 1"
         elif xp <= 8000:
-            return "Bạch Kim 3"
+            return "Vàng 3"
         elif xp <= 9000:
-            return "Bạch Kim 2"
+            return "Vàng 2"
         elif xp <= 10000:
-            return "Bạch Kim 1"
+            return "Vàng 1"
         elif xp <= 11500:
-            return "Kim Cương 3"
+            return "Bạch Kim 3"
         elif xp <= 13000:
-            return "Kim Cương 2"
+            return "Bạch Kim 2"
         elif xp <= 14500:
-            return "Kim Cương 1"
+            return "Bạch Kim 1"
         elif xp <= 16000:
-            return "Tinh Anh 3"
+            return "Kim Cương 3"
         elif xp <= 17500:
-            return "Tinh Anh 2"
+            return "Kim Cương 2"
         elif xp <= 19000:
-            return "Tinh Anh 1"
-        elif xp <= 22000:
-            return "Cao Thủ 5"
+            return "Kim Cương 1"
+        elif xp <= 21000:
+            return "Tinh Anh 3"
+        elif xp <= 23000:
+            return "Tinh Anh 2"
         elif xp <= 25000:
-            return "Cao Thủ 4"
+            return "Tinh Anh 1"
         elif xp <= 28000:
+            return "Cao Thủ 5"
+        elif xp <= 32000:
+            return "Cao Thủ 4"
+        elif xp <= 37000:
             return "Cao Thủ 3"
-        elif xp <= 31000:
+        elif xp <= 43000:
             return "Cao Thủ 2"
-        elif xp <= 40000:
+        elif xp <= 50000:
             return "Cao Thủ 1"
         else:
-            return "Đại Cao Thủ"
+            return "SIÊU CẤP VŨ TRỤ"
+
 
     @discordClient.tree.command(name="rank", description="Hiển thị thông tin chi tiết về các mức rank.")
     async def rank(interaction: discord.Interaction):
-        embed = discord.Embed(
-            title="🏅 Hệ Thống Rank",
-            description="Chi tiết về các mức rank dựa trên thời gian hoạt động (1 phút = 1 XP):",
-            color=discord.Color.dark_theme()
-        )
-        embed.set_thumbnail(url="https://i.pinimg.com/originals/e7/90/f2/e790f26acee065b349c5dabd840638ae.gif")
-        
+        embed_color = discord.Color.dark_theme()
         rank_details = [
             ("Sắt 3", "0 - 500 XP"),
             ("Sắt 2", "501 - 1000 XP"),
@@ -449,30 +447,163 @@ def run_discord_bot():
             ("Đồng 3", "1501 - 2000 XP"),
             ("Đồng 2", "2001 - 3000 XP"),
             ("Đồng 1", "3001 - 4000 XP"),
-            ("Vàng 3", "4001 - 5000 XP"),
-            ("Vàng 2", "5001 - 6000 XP"),
-            ("Vàng 1", "6001 - 7000 XP"),
-            ("Bạch Kim 3", "7001 - 8000 XP"),
-            ("Bạch Kim 2", "8001 - 9000 XP"),
-            ("Bạch Kim 1", "9001 - 10,000 XP"),
-            ("Kim Cương 3", "10,001 - 11,500 XP"),
-            ("Kim Cương 2", "11,501 - 13,000 XP"),
-            ("Kim Cương 1", "13,001 - 14,500 XP"),
-            ("Tinh Anh 3", "14,501 - 16,000 XP"),
-            ("Tinh Anh 2", "16,001 - 17,500 XP"),
-            ("Tinh Anh 1", "17,501 - 19,000 XP"),
-            ("Cao Thủ 5", "19,001 - 22,000 XP"),
-            ("Cao Thủ 4", "22,001 - 25,000 XP"),
-            ("Cao Thủ 3", "25,001 - 28,000 XP"),
-            ("Cao Thủ 2", "28,001 - 31,000 XP"),
-            ("Cao Thủ 1", "31,001 - 40,000 XP"),
-            ("Đại Cao Thủ", "Trên 40,000 XP"),
+            ("Bạc 3", "4001 - 5000 XP"),
+            ("Bạc 2", "5001 - 6000 XP"),
+            ("Bạc 1", "6001 - 7000 XP"),
+            ("Vàng 3", "7001 - 8000 XP"),
+            ("Vàng 2", "8001 - 9000 XP"),
+            ("Vàng 1", "9001 - 10,000 XP"),
+            ("Bạch Kim 3", "10,001 - 11,500 XP"),
+            ("Bạch Kim 2", "11,501 - 13,000 XP"),
+            ("Bạch Kim 1", "13,001 - 14,500 XP"),
+            ("Kim Cương 3", "14,501 - 16,000 XP"),
+            ("Kim Cương 2", "16,001 - 17,500 XP"),
+            ("Kim Cương 1", "17,501 - 19,000 XP"),
+            ("Tinh Anh 3", "19,001 - 22,000 XP"),
+            ("Tinh Anh 2", "22,001 - 25,000 XP"),
+            ("Tinh Anh 1", "25,001 - 28,000 XP"),
+            ("Cao Thủ 5", "28,001 - 31,000 XP"),
+            ("Cao Thủ 4", "31,001 - 34,000 XP"),
+            ("Cao Thủ 3", "34,001 - 37,000 XP"),
+            ("Cao Thủ 2", "37,001 - 40,000 XP"),
+            ("Cao Thủ 1", "40,001 - 50,000 XP"),
+            ("Đại Cao Thủ", "Trên 50,000 XP"),
         ]
 
-        for rank, range_xp in rank_details:
-            embed.add_field(name=f"🎖 {rank}", value=f"**XP**: {range_xp}", inline=False)
+        # Chia rank thành các nhóm 25 mục
+        embeds = []
+        for i in range(0, len(rank_details), 25):
+            embed = discord.Embed(
+                title="🏅 Hệ Thống Rank",
+                description="Chi tiết về các mức rank dựa trên thời gian hoạt động (1 phút = 1 XP):",
+                color=embed_color
+            )
+            embed.set_thumbnail(url="https://i.pinimg.com/originals/e7/90/f2/e790f26acee065b349c5dabd840638ae.gif")
 
-        await interaction.response.send_message(embed=embed)
+            for rank, range_xp in rank_details[i:i+25]:
+                embed.add_field(name=f"🎖 {rank}", value=f"**XP**: {range_xp}", inline=False)
+
+            embeds.append(embed)
+
+        # Đảm bảo trả lời tương tác trước
+        await interaction.response.defer(ephemeral=True)  # Trì hoãn phản hồi
+
+        # Gửi từng embed
+        for embed in embeds:
+            await interaction.followup.send(embed=embed)
+
+
+    @discordClient.tree.command(name="achivements", description="Hiển thị thành tựu của người dùng.")
+    @app_commands.describe(member="Người dùng muốn xem profile (để trống để xem của chính bạn).")
+    async def achivements(interaction: discord.Interaction, member: discord.Member = None):
+        # Kết nối với MongoDB
+        db = client['voice_activity_db']
+        collection = db['user_activities']
+
+        # Nếu không chọn member, lấy profile của chính người dùng
+        target_user = member or interaction.user
+        user_data = collection.find_one({"user_id": target_user.id})
+
+        if not user_data:
+            await interaction.response.send_message(
+                f"Không tìm thấy dữ liệu của {'bạn' if target_user == interaction.user else target_user.display_name}.",
+                ephemeral=True
+            )
+            return
+
+        # Lấy dữ liệu cần thiết
+        total_time = user_data.get("total_time", 0)
+        week_time = user_data.get("week_time", 0)
+        month_time = user_data.get("month_time", 0)
+        achivements = user_data.get("achivements", [])
+
+        # Xác định xếp hạng bằng cách sắp xếp
+        all_users_total = list(collection.find().sort("total_time", -1))
+        total_time_rank = next((index + 1 for index, user in enumerate(all_users_total) if user["user_id"] == target_user.id), None)
+
+        all_users_week = list(collection.find().sort("week_time", -1))
+        week_time_rank = next((index + 1 for index, user in enumerate(all_users_week) if user["user_id"] == target_user.id), None)
+
+        all_users_month = list(collection.find().sort("month_time", -1))
+        month_time_rank = next((index + 1 for index, user in enumerate(all_users_month) if user["user_id"] == target_user.id), None)
+
+        # Điều kiện thành tựu và mô tả
+        achivement_conditions = [
+            {
+                "name": "The_King",
+                "condition": total_time_rank == 1 and week_time_rank == 1 and month_time_rank == 1,
+                "description": "Vua thời gian! Dẫn đầu cả ngày, tuần và tháng.",
+                "gif": "https://i.pinimg.com/originals/2b/6a/a1/2b6aa10f3fcf035f4ed2d59abd2b07ff.gif",
+                "color": discord.Color.from_str("#FFAF45")
+            },
+            {
+                "name": "No1",
+                "condition": total_time_rank == 1,
+                "description": "Số 1 toàn diện, đứng đầu bảng xếp hạng tổng thời gian!",
+                "gif": "https://i.pinimg.com/originals/36/8d/0d/368d0d9c9fca6814127972f33137d788.gif",
+                "color": discord.Color.from_str("#EB5B00")
+            },
+            {
+                "name": "No2",
+                "condition": total_time_rank == 2,
+                "description": "Á quân thời gian, gần đạt đỉnh rồi!",
+                "gif": "https://i.pinimg.com/originals/86/72/b6/8672b63a4da897c9b3040daefc215da2.gif",
+                "color": discord.Color.from_str("#6C48C5")
+            },
+            {
+                "name": "No3",
+                "condition": total_time_rank == 3,
+                "description": "Hạng 3 xuất sắc, hãy cố gắng hơn nữa!",
+                "gif": "https://i.pinimg.com/originals/0a/a1/95/0aa19599cffaf13ae7f9914b1919499b.gif",
+                "color": discord.Color.from_str("#000B58")
+            },
+            {
+                "name": "DarkNight",
+                "condition": total_time_rank and total_time_rank <= 10,
+                "description": "Chiến binh bóng tối, top 10 thời gian tổng!",
+                "gif": "https://i.pinimg.com/originals/e6/4d/7f/e64d7fa781f6ebb33731c2316983d3f0.gif",
+                "color": discord.Color.from_str("#1A1A1D")
+            }
+        ]
+
+        embeds = []
+        # Kiểm tra và thêm thành tựu
+        for achivement in achivement_conditions:
+            if achivement["condition"] and achivement["name"] not in achivements:
+                # Thêm thành tựu vào MongoDB
+                collection.update_one(
+                    {"user_id": target_user.id},
+                    {"$addToSet": {"achivements": achivement["name"]}}
+                )
+                # Tạo embed hiển thị thành tựu
+                embed = discord.Embed(
+                    title=f"🎉 Thành Tựu Mới: {achivement['name']}",
+                    description=f"{target_user.display_name} vừa đạt được thành tựu **{achivement['name']}**! 🎖\n{achivement['description']}",
+                    color=achivement["color"]
+                )
+                embed.set_image(url=achivement["gif"])
+                embeds.append(embed)
+
+        # Hiển thị tất cả thành tựu hiện tại của người dùng
+        for achivement in achivements:
+            for condition in achivement_conditions:
+                if condition["name"] == achivement:
+                    embed = discord.Embed(
+                        title=f"🎖 Thành Tựu: {condition['name']}",
+                        description=f"{target_user.display_name} đã đạt được **{condition['name']}**! 🎖\n{condition['description']}",
+                        color=condition["color"]
+                    )
+                    embed.set_image(url=condition["gif"])
+                    embeds.append(embed)
+
+        # Gửi các embed
+        if embeds:
+            for embed in embeds:
+                await interaction.channel.send(embed=embed)
+            await interaction.response.send_message(f"🎖 Thành tựu của {target_user.display_name} đã được cập nhật!")
+        else:
+            await interaction.response.send_message(f"{target_user.display_name} không có thành tựu mới để thêm!")
+
 
     @discordClient.tree.command(name="version", description="Hiển thị thông tin cập nhật mới nhất của bot.")
     async def version(interaction: discord.Interaction):
